@@ -14,30 +14,18 @@ def get_connection():
 
     os.makedirs("data", exist_ok=True)
 
-    conn = sqlite3.connect(DB_NAME)
+    conn = sqlite3.connect(
+        DB_NAME,
+        timeout=30
+    )
+
     conn.row_factory = sqlite3.Row
 
+    # Wait up to 30 seconds if another Streamlit process
+    # temporarily has the database locked.
+    conn.execute("PRAGMA busy_timeout = 30000")
+
     return conn
-
-
-# ============================================================
-# ADD MISSING COLUMN SAFELY
-# ============================================================
-
-def add_column_if_missing(cursor, table, column, definition):
-
-    columns = [
-        row[1]
-        for row in cursor.execute(
-            f"PRAGMA table_info({table})"
-        ).fetchall()
-    ]
-
-    if column not in columns:
-
-        cursor.execute(
-            f"ALTER TABLE {table} ADD COLUMN {column} {definition}"
-        )
 
 
 # ============================================================
@@ -55,6 +43,32 @@ def initialize_database():
     # USERS
     # ========================================================
 
+    # Check whether an old/incompatible users table exists.
+    cursor.execute("""
+        SELECT name
+        FROM sqlite_master
+        WHERE type = 'table'
+        AND name = 'users'
+    """)
+
+    users_exists = cursor.fetchone() is not None
+
+    if users_exists:
+
+        user_columns = [
+            row[1]
+            for row in cursor.execute(
+                "PRAGMA table_info(users)"
+            ).fetchall()
+        ]
+
+        # The old Cloud database used a different schema.
+        # If password_hash is missing, rebuild the users table.
+        if "password_hash" not in user_columns:
+
+            cursor.execute("DROP TABLE IF EXISTS users")
+
+    # Create the correct users table.
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -65,18 +79,6 @@ def initialize_database():
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     """)
-
-    add_column_if_missing(
-        cursor, "users", "password_hash", "TEXT"
-    )
-
-    add_column_if_missing(
-        cursor, "users", "role", "TEXT"
-    )
-
-    add_column_if_missing(
-        cursor, "users", "full_name", "TEXT"
-    )
 
     # ========================================================
     # INSTRUMENTS
@@ -193,7 +195,7 @@ def initialize_database():
     """)
 
     # ========================================================
-    # CREATE / UPDATE DEMO USERS
+    # DEMO USERS
     # ========================================================
 
     demo_users = [
@@ -229,7 +231,8 @@ def initialize_database():
             password.encode("utf-8")
         ).hexdigest()
 
-        existing = cursor.execute(
+        # Check whether the demo account already exists.
+        existing_user = cursor.execute(
             """
             SELECT id
             FROM users
@@ -238,8 +241,10 @@ def initialize_database():
             (username,)
         ).fetchone()
 
-        if existing:
+        if existing_user:
 
+            # Make sure the demo account has the correct
+            # password and role.
             cursor.execute(
                 """
                 UPDATE users
@@ -276,6 +281,10 @@ def initialize_database():
                     role
                 )
             )
+
+    # ========================================================
+    # SAVE CHANGES
+    # ========================================================
 
     conn.commit()
     conn.close()
