@@ -1,56 +1,54 @@
 import sqlite3
 import os
+import hashlib
 
 
 DB_NAME = "data/measure_verify.db"
 
 
-# -----------------------------------------
+# ============================================================
 # DATABASE CONNECTION
-# -----------------------------------------
+# ============================================================
 
 def get_connection():
 
     os.makedirs("data", exist_ok=True)
 
     conn = sqlite3.connect(DB_NAME)
-
     conn.row_factory = sqlite3.Row
 
     return conn
 
 
-# -----------------------------------------
-# INITIALIZE DATABASE
-# -----------------------------------------
+# ============================================================
+# DATABASE INITIALIZATION
+# ============================================================
 
 def initialize_database():
 
     os.makedirs("data", exist_ok=True)
 
     conn = get_connection()
-
     cursor = conn.cursor()
 
-
-    # -----------------------------------------
-    # USERS TABLE
-    # -----------------------------------------
+    # ========================================================
+    # USERS
+    # ========================================================
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
             full_name TEXT NOT NULL,
-            role TEXT NOT NULL
+            username TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            role TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
-
-    # -----------------------------------------
-    # INSTRUMENTS TABLE
-    # -----------------------------------------
+    # ========================================================
+    # INSTRUMENTS
+    # ========================================================
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS instruments (
@@ -61,165 +59,170 @@ def initialize_database():
             model TEXT,
             capacity TEXT,
             owner_name TEXT NOT NULL,
-            location TEXT
+            location TEXT,
+            registration_date TEXT DEFAULT CURRENT_TIMESTAMP,
+            status TEXT DEFAULT 'Active'
         )
     """)
 
-
-    # -----------------------------------------
-    # APPLICATIONS TABLE
-    # -----------------------------------------
+    # ========================================================
+    # APPLICATIONS
+    # ========================================================
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS applications (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            application_id TEXT UNIQUE,
+            application_number TEXT UNIQUE NOT NULL,
             instrument_id INTEGER NOT NULL,
-            applicant_name TEXT NOT NULL,
-            verification_type TEXT NOT NULL,
-            status TEXT NOT NULL,
-            application_date TEXT,
-            FOREIGN KEY (instrument_id)
-                REFERENCES instruments(id)
+            applicant_username TEXT NOT NULL,
+            application_type TEXT NOT NULL,
+            submitted_date TEXT DEFAULT CURRENT_TIMESTAMP,
+            scheduled_date TEXT,
+            assigned_to TEXT,
+            status TEXT DEFAULT 'Pending',
+            remarks TEXT,
+            application_id TEXT,
+            applicant_name TEXT,
+            verification_type TEXT,
+            application_date TEXT
         )
     """)
 
-
-    # -----------------------------------------
-    # INSPECTIONS TABLE
-    # -----------------------------------------
+    # ========================================================
+    # INSPECTIONS
+    # ========================================================
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS inspections (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            application_id INTEGER,
-            inspector_name TEXT,
-            inspection_date TEXT,
+            application_id INTEGER NOT NULL,
+            inspector_username TEXT NOT NULL,
+            inspection_date TEXT DEFAULT CURRENT_TIMESTAMP,
             observations TEXT,
             result TEXT,
-            FOREIGN KEY (application_id)
-                REFERENCES applications(id)
+            failure_count INTEGER DEFAULT 0,
+            evidence_file TEXT,
+            remarks TEXT
         )
     """)
 
-
-    # -----------------------------------------
-    # CERTIFICATES TABLE
-    # -----------------------------------------
+    # ========================================================
+    # CERTIFICATES
+    # ========================================================
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS certificates (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            application_id INTEGER,
-            certificate_number TEXT UNIQUE,
-            issue_date TEXT,
-            expiry_date TEXT,
-            certificate_hash TEXT,
-            FOREIGN KEY (application_id)
-                REFERENCES applications(id)
+            certificate_number TEXT UNIQUE NOT NULL,
+            application_id INTEGER NOT NULL,
+            instrument_id INTEGER NOT NULL,
+            issue_date TEXT NOT NULL,
+            valid_until TEXT NOT NULL,
+            verification_result TEXT NOT NULL,
+            certificate_data TEXT NOT NULL,
+            record_hash TEXT NOT NULL,
+            qr_data TEXT,
+            status TEXT DEFAULT 'VALID'
         )
     """)
 
-
-    # -----------------------------------------
-    # RISK RECORDS TABLE
-    # -----------------------------------------
+    # ========================================================
+    # RISK RECORDS
+    # ========================================================
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS risk_records (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            instrument_id INTEGER,
-            risk_level TEXT,
-            risk_score REAL,
-            reason TEXT,
-            created_at TEXT,
-            FOREIGN KEY (instrument_id)
-                REFERENCES instruments(id)
+            instrument_id INTEGER NOT NULL,
+            risk_level TEXT NOT NULL,
+            risk_score INTEGER DEFAULT 0,
+            failure_count INTEGER DEFAULT 0,
+            overdue_flag INTEGER DEFAULT 0,
+            abnormal_pattern_flag INTEGER DEFAULT 0,
+            analysis_date TEXT DEFAULT CURRENT_TIMESTAMP,
+            explanation TEXT
         )
     """)
 
-
-    # -----------------------------------------
-    # AUDIT LOGS TABLE
-    # -----------------------------------------
+    # ========================================================
+    # AUDIT LOGS
+    # ========================================================
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS audit_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT,
-            action TEXT,
-            timestamp TEXT
+            username TEXT NOT NULL,
+            action TEXT NOT NULL,
+            entity_type TEXT,
+            entity_id INTEGER,
+            timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+            details TEXT
         )
     """)
 
+    # ========================================================
+    # CREATE DEMO USERS AUTOMATICALLY
+    # ========================================================
 
-    # -----------------------------------------
-    # APPLICATION TABLE MIGRATION
-    # -----------------------------------------
-
-    cursor.execute(
-        "PRAGMA table_info(applications)"
-    )
-
-    columns = [
-        row["name"]
-        for row in cursor.fetchall()
+    demo_users = [
+        (
+            "Demo User",
+            "user",
+            "user123",
+            "User"
+        ),
+        (
+            "Demo LMO",
+            "lmo",
+            "lmo123",
+            "LMO"
+        ),
+        (
+            "Demo GATC",
+            "gatc",
+            "gatc123",
+            "GATC"
+        ),
+        (
+            "System Administrator",
+            "admin",
+            "admin123",
+            "Admin"
+        )
     ]
 
+    for full_name, username, password, role in demo_users:
 
-    if "application_id" not in columns:
-
-        cursor.execute("""
-            ALTER TABLE applications
-            ADD COLUMN application_id TEXT
-        """)
-
-
-    if "applicant_name" not in columns:
+        password_hash = hashlib.sha256(
+            password.encode("utf-8")
+        ).hexdigest()
 
         cursor.execute("""
-            ALTER TABLE applications
-            ADD COLUMN applicant_name TEXT
-        """)
-
-
-    if "verification_type" not in columns:
-
-        cursor.execute("""
-            ALTER TABLE applications
-            ADD COLUMN verification_type TEXT
-        """)
-
-
-    if "status" not in columns:
-
-        cursor.execute("""
-            ALTER TABLE applications
-            ADD COLUMN status TEXT
-        """)
-
-
-    if "application_date" not in columns:
-
-        cursor.execute("""
-            ALTER TABLE applications
-            ADD COLUMN application_date TEXT
-        """)
-
+            INSERT OR IGNORE INTO users
+            (
+                full_name,
+                username,
+                password_hash,
+                role
+            )
+            VALUES (?, ?, ?, ?)
+        """, (
+            full_name,
+            username,
+            password_hash,
+            role
+        ))
 
     conn.commit()
-
     conn.close()
 
-    print(
-        "MEASURE VERIFY database initialized successfully."
-    )
 
-
-# -----------------------------------------
-# RUN DIRECTLY
-# -----------------------------------------
+# ============================================================
+# DIRECT EXECUTION
+# ============================================================
 
 if __name__ == "__main__":
 
     initialize_database()
+
+    print("MEASURE VERIFY database initialized successfully.")
