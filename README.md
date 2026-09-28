@@ -275,6 +275,7 @@ QR Verification
 Validity Tracking
         ↓
 Renewal / Re-verification
+
 🔒 Security & Trust
 Role-Based Access Control
 
@@ -301,6 +302,7 @@ Logout
 Inspection scheduling
 Inspection completion
 Certificate generation
+
 📊 Dashboards & Monitoring
 
 The system provides dashboards for monitoring:
@@ -313,6 +315,7 @@ Certificates
 Risk levels
 Verification status
 Audit activities
+
 📁 Project Structure
 
 MEASURE_VERIFY/
@@ -335,6 +338,7 @@ MEASURE_VERIFY/
 ├── assets/
 ├── data/
 └── certificates/
+
 🧪 Prototype Validation
 
 The working MVP has been tested through the main verification workflow.
@@ -367,6 +371,7 @@ Admin ✅
 Certificate Verification
 
 The prototype successfully verifies certificate integrity by comparing the calculated SHA-256 hash with the stored certificate record hash.
+
 🌱 Future Scope
 
 The current implementation is an MVP designed for rapid validation and demonstration.
@@ -383,6 +388,7 @@ Automated notification services
 Integration with additional verification and compliance services
 
 These are future extensions and are not claimed as implemented features of the current MVP.
+
 📈 Scalability
 
 The system can evolve from:
@@ -394,6 +400,7 @@ Multi-State Deployment
 The current MVP uses SQLite for lightweight validation.
 
 For production-scale deployment, the database and infrastructure can be migrated to managed and scalable services.
+
 🏆 Smart India Hackathon 2026
 
 Problem Statement ID: SIH26036
@@ -405,11 +412,13 @@ Team: GLITCH BUSTERS
 Theme: Miscellaneous
 
 Category: Software
+
 💎 Core Innovation
 
 Risk Intelligence + Tamper-Evident Certification
 
 MEASURE VERIFY moves beyond simple digital record keeping by connecting the verification lifecycle with explainable risk monitoring and certificate record integrity verification.
+
 📄 Project Status
 
 Current Status: Working MVP
