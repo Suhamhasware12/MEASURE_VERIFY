@@ -427,4 +427,213 @@ Deployment: Streamlit Community Cloud
 
 Repository:https://github.com/Suhamhasware12/MEASURE_VERIFY.git
 
+🖥️ Working Prototype – Application Walkthrough
 
+The MEASURE VERIFY MVP is a working web-based prototype deployed using Streamlit Community Cloud.
+
+The application provides different role-based dashboards for Users, Legal Metrology Officers (LMOs), Government Approved Test Centres (GATCs), and Administrators.
+
+1. Login & Role-Based Access
+
+Users log in through the centralized login interface.
+
+After authentication, the system automatically provides access according to the user's assigned role.
+
+Supported roles:
+
+User
+LMO
+GATC
+Admin
+
+Each role has access only to the functions required for that workflow.
+
+2. User Dashboard
+
+The User dashboard allows instrument owners or applicants to manage their verification activities.
+
+Register Instrument
+
+Users can register a weighing or measuring instrument by entering:
+
+Instrument number
+Instrument type
+Manufacturer
+Model
+Capacity
+Owner name
+Location
+
+The registered instrument is stored in the centralized database.
+
+Apply for Verification
+
+Users can select a registered instrument and submit:
+
+Verification application
+Re-verification application
+
+The system generates a unique application number and stores the application details.
+
+Track Applications
+
+Users can view their submitted applications along with:
+
+Application number
+Instrument number
+Verification type
+Application status
+Scheduled inspection information
+View Certificates
+
+After successful verification, users can view their generated digital certificates.
+
+3. LMO Dashboard
+
+The LMO dashboard manages the inspection and verification workflow.
+
+Pending Applications
+
+LMOs can view applications that are waiting for inspection.
+
+Schedule Inspection
+
+The LMO can:
+
+Select an application
+Assign an inspector
+Set the inspection date
+Update the application status
+Digital Inspection
+
+The inspector can record:
+
+Inspection observations
+Verification result
+Failure count
+Remarks
+
+The application is then marked as Verified or Rejected according to the inspection result.
+
+4. Instrument Risk Monitoring
+
+The prototype includes an explainable rule/statistical risk analysis module.
+
+The system analyses verification history and failure patterns and assigns:
+
+LOW
+MEDIUM
+HIGH
+
+risk levels.
+
+The risk monitoring dashboard helps identify instruments that may require closer monitoring or priority re-verification.
+
+5. Digital Certificate Generation
+
+After a successful inspection, the system can generate a digital verification certificate.
+
+The certificate contains:
+
+Certificate number
+Application reference
+Instrument information
+Issue date
+Validity date
+Verification result
+Certificate status
+SHA-256 record hash
+6. SHA-256 Certificate Integrity Verification
+
+The system generates a SHA-256 hash from the certificate record.
+
+During certificate verification, the system calculates the hash again and compares it with the stored hash.
+
+Matching hashes produce:
+
+VERIFIED — Certificate record is intact.
+
+A mismatch produces:
+
+ALTERED / INVALID — Hash mismatch detected.
+
+7. QR-Based Verification
+
+A QR code is generated for the digital certificate.
+
+The QR verification process retrieves the certificate information and checks the associated certificate record and integrity information.
+
+This provides a convenient digital method for checking certificate records.
+
+8. GATC Dashboard
+
+GATC users have role-based access to the verification workflow.
+
+Assigned inspections can be accessed and processed through the digital system according to the assigned workflow.
+
+9. Administrator Dashboard
+
+The Administrator dashboard provides centralized monitoring of the system.
+
+Administrators can monitor:
+
+Registered instruments
+Applications
+Certificates
+Risk records
+Verification status
+Audit logs
+10. Audit Trail
+
+Important system activities are recorded in the audit log.
+
+Examples include:
+
+Login
+Logout
+Inspection scheduling
+Inspection completion
+Certificate generation
+
+This provides traceability of important actions performed within the system.
+
+11. Complete Working Prototype Flow
+
+The complete demonstrated workflow is:
+
+User Login
+↓
+Register Instrument
+↓
+Submit Verification Application
+↓
+LMO Login
+↓
+Schedule Inspection
+↓
+Digital Inspection
+↓
+Verification Result
+↓
+Risk Analysis
+↓
+Digital Certificate
+↓
+SHA-256 Integrity Verification
+↓
+QR Verification
+↓
+Validity Tracking
+↓
+Renewal / Re-verification
+
+Prototype Status
+
+Current Status: Working MVP
+
+The core verification lifecycle, role-based access, inspection workflow, risk analysis, digital certificate generation, SHA-256 integrity verification, QR verification and audit logging have been implemented and tested.
+
+Live Prototype:
+https://measureverify-aixzffqehotbaycwihgzyk.streamlit.app/
+GitHub Repository:
+https://github.com/Suhamhasware12/MEASURE_VERIFY.git
