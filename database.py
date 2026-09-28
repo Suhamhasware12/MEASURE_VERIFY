@@ -21,6 +21,26 @@ def get_connection():
 
 
 # ============================================================
+# ADD MISSING COLUMN SAFELY
+# ============================================================
+
+def add_column_if_missing(cursor, table, column, definition):
+
+    columns = [
+        row[1]
+        for row in cursor.execute(
+            f"PRAGMA table_info({table})"
+        ).fetchall()
+    ]
+
+    if column not in columns:
+
+        cursor.execute(
+            f"ALTER TABLE {table} ADD COLUMN {column} {definition}"
+        )
+
+
+# ============================================================
 # DATABASE INITIALIZATION
 # ============================================================
 
@@ -45,6 +65,18 @@ def initialize_database():
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     """)
+
+    add_column_if_missing(
+        cursor, "users", "password_hash", "TEXT"
+    )
+
+    add_column_if_missing(
+        cursor, "users", "role", "TEXT"
+    )
+
+    add_column_if_missing(
+        cursor, "users", "full_name", "TEXT"
+    )
 
     # ========================================================
     # INSTRUMENTS
@@ -161,7 +193,7 @@ def initialize_database():
     """)
 
     # ========================================================
-    # CREATE DEMO USERS AUTOMATICALLY
+    # CREATE / UPDATE DEMO USERS
     # ========================================================
 
     demo_users = [
@@ -197,21 +229,53 @@ def initialize_database():
             password.encode("utf-8")
         ).hexdigest()
 
-        cursor.execute("""
-            INSERT OR IGNORE INTO users
-            (
-                full_name,
-                username,
-                password_hash,
-                role
+        existing = cursor.execute(
+            """
+            SELECT id
+            FROM users
+            WHERE username = ?
+            """,
+            (username,)
+        ).fetchone()
+
+        if existing:
+
+            cursor.execute(
+                """
+                UPDATE users
+                SET full_name = ?,
+                    password_hash = ?,
+                    role = ?
+                WHERE username = ?
+                """,
+                (
+                    full_name,
+                    password_hash,
+                    role,
+                    username
+                )
             )
-            VALUES (?, ?, ?, ?)
-        """, (
-            full_name,
-            username,
-            password_hash,
-            role
-        ))
+
+        else:
+
+            cursor.execute(
+                """
+                INSERT INTO users
+                (
+                    full_name,
+                    username,
+                    password_hash,
+                    role
+                )
+                VALUES (?, ?, ?, ?)
+                """,
+                (
+                    full_name,
+                    username,
+                    password_hash,
+                    role
+                )
+            )
 
     conn.commit()
     conn.close()
@@ -225,4 +289,6 @@ if __name__ == "__main__":
 
     initialize_database()
 
-    print("MEASURE VERIFY database initialized successfully.")
+    print(
+        "MEASURE VERIFY database initialized successfully."
+    )
